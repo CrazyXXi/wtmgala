@@ -3,8 +3,6 @@ import { AnimatePresence, motion } from 'motion/react'
 import TicketView from './TicketView'
 import { CATEGORIES, CatId, byId, fcfa, EVENT } from './data'
 
-const MAX = 5
-
 export default function Billets({ initial, onStart }: { initial: CatId; onStart: (id: CatId, qty: number) => void }) {
   const [id, setId] = useState<CatId>(initial)
   const [qty, setQty] = useState(1)
@@ -66,12 +64,12 @@ export default function Billets({ initial, onStart }: { initial: CatId; onStart:
                 <div className="qty">
                   <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Moins">−</button>
                   <b>{qty}</b>
-                  <button onClick={() => setQty(Math.min(MAX, qty + 1))} aria-label="Plus">+</button>
+                  <button onClick={() => setQty(Math.min(cat.left, qty + 1))} aria-label="Plus">+</button>
                 </div>
               </div>
               <div className="bp-total"><span>Total</span><b>{fcfa(cat.price * qty)}</b></div>
               <button className="btn big" onClick={() => onStart(id, qty)}>Commencer avec mes infos →</button>
-              <small>{cat.left} places restantes · {MAX} billets maximum par commande</small>
+              <small>{cat.left} places restantes · pas de limite par commande tant qu’il en reste</small>
             </div>
           </motion.aside>
         </AnimatePresence>

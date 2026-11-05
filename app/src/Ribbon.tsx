@@ -168,7 +168,7 @@ export default function Ribbon({ onPick, children }: Props) {
 
     const render = (time: number) => {
       const pp = p
-      const rise = 1 - out(span(pp, 0, 0.12)), run = mix(-50, 76, span(pp, 0, 0.58))
+      const rise = 1 - out(span(pp, 0, 0.12)), run = mix(-22, 76, span(pp, 0, 0.58))
       if (l1.current) l1.current.style.transform = `translate3d(${run}vw,${rise * 34}vh,0)`
       if (l2.current) l2.current.style.transform = `translate3d(${-run}vw,${rise * 34}vh,0)`
       if (cap.current) {

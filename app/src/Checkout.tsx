@@ -5,7 +5,6 @@ import TicketView from './TicketView'
 
 export interface Order { id: string; cat: Category; qty: number; name: string; email: string; tickets: { number: string; qr: string }[] }
 
-const MAX = 5
 const METHODS = ['MTN MoMo', 'Moov Money', 'Celtiis Cash', 'Carte bancaire']
 
 export const loadOrders = (): Order[] => { try { return JSON.parse(localStorage.getItem('wtm-orders') || '[]') } catch { return [] } }
@@ -49,11 +48,11 @@ export default function Checkout({ cat, qty: qty0, onClose, onDone }: { cat: Cat
               <div className="pane">
                 <p className="eyebrow">Catégorie {cat.name}</p>
                 <h3>Combien de places ?</h3>
-                <p className="muted">Jusqu’à {MAX} billets par commande.</p>
+                <p className="muted">{cat.left} places disponibles.</p>
                 <div className="qty">
                   <button onClick={() => setQty(Math.max(1, qty - 1))} aria-label="Moins">−</button>
                   <b>{qty}</b>
-                  <button onClick={() => setQty(Math.min(MAX, qty + 1))} aria-label="Plus">+</button>
+                  <button onClick={() => setQty(Math.min(cat.left, qty + 1))} aria-label="Plus">+</button>
                 </div>
                 <div className="total"><span>Total</span><b>{fcfa(cat.price * qty)}</b></div>
                 <button className="btn" onClick={() => setStep(1)}>Continuer</button>
