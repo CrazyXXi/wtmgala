@@ -138,7 +138,7 @@ export default function Ribbon({ onPick, children }: Props) {
     }
 
     let target = 0, p = 0
-    const readScroll = () => { const t = trackRef.current!; target = clamp(scrollY / (t.offsetHeight - innerHeight)) }
+    const readScroll = () => { const t = trackRef.current!; target = clamp(scrollY / ((t.offsetHeight - innerHeight) / 0.86)) }
     addEventListener('scroll', readScroll, { passive: true }); readScroll()
 
     const op = new THREE.Vector3(), ot = new THREE.Vector3(), up = new THREE.Vector3(), Y = new THREE.Vector3(0, 1, 0), vp = new THREE.Vector3()
