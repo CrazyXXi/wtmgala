@@ -193,7 +193,7 @@ em{font-family:inherit;font-style:normal;font-weight:inherit;color:inherit}
 .callouts path{stroke-width:1.1;stroke-dasharray:2 8;opacity:.5}
 .callouts circle{opacity:.6}
 .cl-label{font-size:clamp(12px,.95vw,15px);font-weight:600;opacity:0}
-#track{height:1300vh}
+#track{height:1285vh}
 
 /* scrollbar fine */
 html{scrollbar-width:thin;scrollbar-color:#A7D3F0 rgba(255,255,255,.06)}
