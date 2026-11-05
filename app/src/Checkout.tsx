@@ -10,11 +10,11 @@ const METHODS = ['MTN MoMo', 'Moov Money', 'Celtiis Cash', 'Carte bancaire']
 export const loadOrders = (): Order[] => { try { return JSON.parse(localStorage.getItem('wtm-orders') || '[]') } catch { return [] } }
 const saveOrder = (o: Order) => { try { localStorage.setItem('wtm-orders', JSON.stringify([o, ...loadOrders()])) } catch { /* ignoré */ } }
 
-export default function Checkout({ cat, qty: qty0, onClose, onDone }: { cat: Category; qty?: number; onClose: () => void; onDone: () => void }) {
+export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { cat: Category; qty?: number; email?: string; onClose: () => void; onDone: () => void }) {
   // Si la quantité est déjà choisie sur la page billets, on démarre directement aux infos.
   const [step, setStep] = useState(qty0 ? 1 : 0)
   const [qty, setQty] = useState(qty0 ?? 1)
-  const [f, setF] = useState({ first: '', last: '', email: '', phone: '', ok: false })
+  const [f, setF] = useState({ first: '', last: '', email: email ?? '', phone: '', ok: false })
   const [method, setMethod] = useState(METHODS[0])
   const [busy, setBusy] = useState(false)
   const [order, setOrder] = useState<Order | null>(null)

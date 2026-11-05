@@ -4,6 +4,8 @@ import Ribbon from './Ribbon'
 import TicketView from './TicketView'
 import Billets from './Billets'
 import Checkout, { loadOrders } from './Checkout'
+import Login from './Login'
+import { getUser, logout, sameEmail } from './auth'
 import { CATEGORIES, CatId, byId, fcfa, EVENT } from './data'
 
 const FAQ = [
@@ -28,6 +30,9 @@ export default function App() {
   const [orders, setOrders] = useState(loadOrders)
   const [open, setOpen] = useState<number | null>(0)
   const [onSky, setOnSky] = useState(true)
+  const [user, setUser] = useState<string | null>(getUser)
+  const [login, setLogin] = useState(false)
+  const [menu, setMenu] = useState(false)
   useEffect(() => {
     const f = () => {
       const t = document.getElementById('track')
@@ -36,6 +41,7 @@ export default function App() {
     f(); addEventListener('scroll', f, { passive: true })
     return () => removeEventListener('scroll', f)
   }, [route.page])
+  const myTickets = user ? orders.filter((o) => sameEmail(o.email, user)) : []
   const [view, setView] = useState<{ id: CatId; name: string; number: string; qr: string } | null>(null)
 
   useEffect(() => {
@@ -60,6 +66,19 @@ export default function App() {
           <a href="/#mes-billets" onClick={link('/#mes-billets')}>Mes billets</a>
           <a href="/#faq" onClick={link('/#faq')}>FAQ</a>
         </nav>
+        {user ? (
+          <div className="acct">
+            <button className="avatar" onClick={() => setMenu(!menu)} aria-label="Mon compte" aria-expanded={menu}>{user[0].toUpperCase()}</button>
+            {menu && (
+              <div className="acct-menu" role="menu">
+                <small>{user}</small>
+                <button role="menuitem" onClick={() => { logout(); setUser(null); setMenu(false) }}>Déconnexion</button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button className="loginbtn" onClick={() => setLogin(true)}>Se connecter</button>
+        )}
         {route.page === 'home' && <a className="btn sm" href="/billets" onClick={link('/billets')}>Prendre ma place</a>}
       </header>
   )
@@ -96,10 +115,12 @@ export default function App() {
               <motion.div {...reveal}>
                 <p className="eyebrow">Mes billets</p>
                 <h2>Retrouvez vos billets</h2>
-                {orders.length === 0 && <p className="lead">Vous n’avez pas encore de billet sur cet appareil.</p>}
+                {!user && <p className="lead">Connectez-vous avec votre e-mail pour retrouver vos billets.</p>}
+                {user && myTickets.length === 0 && <p className="lead">Aucun billet pour {user} pour le moment.</p>}
+                {!user && <div className="need-login"><button className="btn" onClick={() => setLogin(true)}>Se connecter</button></div>}
               </motion.div>
               <div className="mine-list">
-                {orders.flatMap((o) => o.tickets.map((t) => (
+                {myTickets.flatMap((o) => o.tickets.map((t) => (
                   <div key={t.number} className="mt-row">
                     <i style={{ background: byId(o.cat.id).main }} />
                     <div><b>{byId(o.cat.id).name} · {o.name}</b><small>{t.number}</small></div>
@@ -140,7 +161,8 @@ export default function App() {
             </motion.div>
           </motion.div>
         )}
-        {buy && <Checkout key={buy.id} cat={byId(buy.id)} qty={buy.qty} onClose={() => setBuy(null)} onDone={() => setOrders(loadOrders())} />}
+        {login && <Login onClose={() => setLogin(false)} onDone={(e) => { setUser(e); setLogin(false) }} />}
+        {buy && <Checkout key={buy.id} cat={byId(buy.id)} email={user ?? undefined} qty={buy.qty} onClose={() => setBuy(null)} onDone={() => setOrders(loadOrders())} />}
       </AnimatePresence>
     </>
   )
