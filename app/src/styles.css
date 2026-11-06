@@ -228,3 +228,31 @@ html{scrollbar-width:thin;scrollbar-color:#A7D3F0 rgba(255,255,255,.06)}
 .nav nav{position:absolute;left:50%;transform:translateX(-50%)}
 .nav .loginbtn,.nav .acct{margin-left:auto}
 .nav .btn.sm{margin-left:-6px}
+
+/* ===== Responsive ===== */
+.nav .btn,.nav .loginbtn,.nav .acct button{white-space:nowrap}
+.nav .brand{flex:none}
+@media(max-width:760px){
+  .nav{gap:8px;padding:10px 14px}
+  .nav .brand img{height:34px}
+  .nav .loginbtn{padding:8px 13px;font-size:13px}
+  .nav .btn.sm{padding:9px 14px;font-size:13px;margin-left:0}
+  .nav .nav-spacer{display:none}
+  .nav .avatar{width:36px;height:36px}
+}
+@media(max-width:360px){.nav .brand img{height:28px}.nav .loginbtn{padding:7px 10px}.nav .btn.sm{padding:8px 11px}}
+@media(max-width:700px){.hl{font-size:13.5vw}.bp-buy .btn.big{font-size:15px;padding:16px 18px;white-space:nowrap}}
+.hl{font-size:clamp(40px,min(9vw,16vh),170px)}
+@media(max-width:700px){.hl{font-size:13.5vw}}
+.burger{display:none;flex:none;width:40px;height:40px;border-radius:50%;border:1.5px solid currentColor;background:transparent;color:inherit;cursor:pointer;padding:0;position:relative}
+.burger i{position:absolute;left:11px;right:11px;height:2px;background:currentColor;border-radius:2px}
+.burger i:nth-child(1){top:14px}.burger i:nth-child(2){top:19px}.burger i:nth-child(3){top:24px}
+.nav-menu{display:none;position:absolute;left:14px;top:calc(100% + 4px);min-width:200px;flex-direction:column;gap:2px;background:var(--cream);border-radius:16px;padding:8px;box-shadow:0 14px 40px rgba(14,8,40,.3);z-index:70}
+.nav-menu a{color:var(--navy)!important;text-decoration:none;padding:12px 14px;border-radius:10px;font-weight:600}
+.nav-menu a:hover{background:rgba(29,19,73,.08)}
+@media(max-width:1000px){.nav nav{display:none}.burger{display:block}.nav-menu{display:flex}.nav .brand{margin-right:auto}}
+@media(max-width:760px){.nav .brand{margin-right:0}.nav .burger{width:36px;height:36px}.burger i{left:9px;right:9px}.burger i:nth-child(1){top:12px}.burger i:nth-child(2){top:17px}.burger i:nth-child(3){top:22px}}
+.nav-menu .menu-login{display:none;margin-top:4px;background:var(--navy);color:#fff;border:0;border-radius:99px;padding:12px 14px;font:600 15px 'Instrument Sans';cursor:pointer}
+@media(max-width:520px){.nav .loginbtn{display:none}.nav-menu .menu-login{display:block}.nav .btn.sm{margin-left:auto}}
+
+@media(max-width:700px){#rule{display:none}}

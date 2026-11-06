@@ -2,38 +2,30 @@ import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Category, fcfa, EVENT } from './data'
 import TicketView from './TicketView'
-
-export interface Order { id: string; cat: Category; qty: number; name: string; email: string; tickets: { number: string; qr: string }[] }
+import { createOrder, Order } from './auth'
 
 const METHODS = ['MTN MoMo', 'Moov Money', 'Celtiis Cash', 'Carte bancaire']
 
-export const loadOrders = (): Order[] => { try { return JSON.parse(localStorage.getItem('wtm-orders') || '[]') } catch { return [] } }
-const saveOrder = (o: Order) => { try { localStorage.setItem('wtm-orders', JSON.stringify([o, ...loadOrders()])) } catch { /* ignoré */ } }
-
-export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { cat: Category; qty?: number; email?: string; onClose: () => void; onDone: () => void }) {
+export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { cat: Category; qty?: number; email: string; onClose: () => void; onDone: () => void }) {
   // Si la quantité est déjà choisie sur la page billets, on démarre directement aux infos.
   const [step, setStep] = useState(qty0 ? 1 : 0)
   const [qty, setQty] = useState(qty0 ?? 1)
-  const [f, setF] = useState({ first: '', last: '', email: email ?? '', phone: '', ok: false })
+  const [f, setF] = useState({ first: '', last: '', phone: '', ok: false })
+  const [err, setErr] = useState('')
   const [method, setMethod] = useState(METHODS[0])
   const [busy, setBusy] = useState(false)
   const [order, setOrder] = useState<Order | null>(null)
-  const valid = f.first && f.last && /\S+@\S+\.\S+/.test(f.email) && f.phone.length >= 8 && f.ok
+  const valid = f.first && f.last && f.phone.length >= 8 && f.ok
 
-  const pay = () => {
-    setBusy(true)
-    // Démo : à remplacer par FedaPay / KkiaPay + webhook serveur avant émission du billet.
-    setTimeout(() => {
-      const id = String(Math.floor(Math.random() * 900000) + 100000)
-      const o: Order = {
-        id, cat, qty, name: `${f.first} ${f.last}`, email: f.email,
-        tickets: Array.from({ length: qty }, (_, i) => {
-          const number = `WTMG-2026-${id}${i ? '-' + (i + 1) : ''}`
-          return { number, qr: `WTMG|${cat.id}|${number}|demo` }
-        }),
-      }
-      saveOrder(o); setOrder(o); setBusy(false); setStep(3); onDone()
-    }, 1900)
+  const pay = async () => {
+    setBusy(true); setErr('')
+    // Démo : le paiement est simulé. À remplacer par FedaPay / KkiaPay + webhook serveur avant émission du billet.
+    await new Promise((r) => setTimeout(r, 1500))
+    try {
+      const o = await createOrder({ cat: cat.id, qty, name: `${f.first} ${f.last}`, phone: f.phone })
+      setOrder(o); setStep(3); onDone()
+    } catch (e) { setErr((e as Error).message) }
+    setBusy(false)
   }
 
   const steps = ['Billets', 'Vos infos', 'Paiement', 'Votre billet']
@@ -66,7 +58,7 @@ export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { c
                   <label>Prénom<input value={f.first} onChange={(e) => setF({ ...f, first: e.target.value })} autoComplete="given-name" /></label>
                   <label>Nom<input value={f.last} onChange={(e) => setF({ ...f, last: e.target.value })} autoComplete="family-name" /></label>
                 </div>
-                <label>E-mail<input type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} autoComplete="email" /></label>
+                <label>E-mail du compte<input type="email" value={email} readOnly disabled /></label>
                 <label>Numéro WhatsApp<input type="tel" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} autoComplete="tel" placeholder="+229 …" /></label>
                 {cat.id === 'communaute' && <p className="note">Catégorie Communauté : un justificatif (carte étudiante ou lien de profil) pourra vous être demandé.</p>}
                 <label className="check"><input type="checkbox" checked={f.ok} onChange={(e) => setF({ ...f, ok: e.target.checked })} /> J’accepte que mes données (nom, e-mail, téléphone) servent à émettre mon billet.</label>
@@ -81,6 +73,7 @@ export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { c
                   {METHODS.map((m) => <button key={m} className={m === method ? 'on' : ''} onClick={() => setMethod(m)}>{m}</button>)}
                 </div>
                 <p className="note">Mode démonstration : aucun paiement réel n’est effectué.</p>
+                {err && <p className="err" role="alert">{err}</p>}
                 <button className="btn" onClick={pay} disabled={busy}>{busy ? 'Paiement en cours…' : `Payer avec ${method}`}</button>
               </div>
             )}
@@ -88,7 +81,7 @@ export default function Checkout({ cat, qty: qty0, email, onClose, onDone }: { c
               <div className="pane">
                 <p className="eyebrow">Commande {order.id}</p>
                 <h3>C’est confirmé, <em>à bientôt</em></h3>
-                <p className="muted">Un e-mail et un message WhatsApp vous enverront {order.qty > 1 ? 'vos billets' : 'votre billet'}. {EVENT.dateLong}.</p>
+                <p className="muted">{order.qty > 1 ? 'Vos billets sont' : 'Votre billet est'} rattaché{order.qty > 1 ? 's' : ''} au compte {order.email}. {EVENT.dateLong}.</p>
                 <div className="reveal">
                   {order.tickets.map((t, i) => (
                     <motion.div key={t.number} initial={{ y: -80, rotate: -6 + i * 3, opacity: 0 }} animate={{ y: 0, rotate: 0, opacity: 1 }} transition={{ delay: 0.15 + i * 0.18, type: 'spring', damping: 14, stiffness: 120 }}>

@@ -118,11 +118,18 @@ export default function Ribbon({ onPick, children }: Props) {
 
     /* mise en page */
     let W = 1, H = 1, asp = 1, cols = 2, rows = 2, tanH = 0.3153
+    let runA = -22, runB = 76, riseV = 34
     const resize = () => {
       W = innerWidth; H = innerHeight; asp = W / H
+      // Titre : départ visible en entier sur mobile, sortie complète quel que soit l'écran
+      const tw = Math.max(l1.current?.firstElementChild?.getBoundingClientRect().width ?? 0, l2.current?.firstElementChild?.getBoundingClientRect().width ?? 0)
+      runA = asp < 1 ? 0 : -14
+      riseV = H < 600 ? 12 : 34 // écrans bas (téléphone en paysage) : le titre reste dans le cadre
+      runB = Math.max(76, 62 + (tw / 2 / W) * 100)
       renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(W, H, false)
       camera.aspect = asp
-      camera.fov = asp < 16 / 9 ? (Math.atan(0.561 / asp) * 360) / Math.PI : FOV
+      const fa = Math.max(asp, 0.78) // portrait : billets plus grands, le ruban déborde un peu de l'écran
+      camera.fov = fa < 16 / 9 ? (Math.atan(0.561 / fa) * 360) / Math.PI : FOV
       camera.updateProjectionMatrix()
       tanH = Math.tan((camera.fov * Math.PI) / 360)
       cols = asp < 0.9 ? 1 : 2; rows = 4 / cols
@@ -130,7 +137,8 @@ export default function Ribbon({ onPick, children }: Props) {
     addEventListener('resize', resize); resize()
     const grid = (i: number) => {
       const vh = 2 * GZ * tanH, vw = vh * asp
-      const gw = vw * (cols === 2 ? 0.62 : 0.86), gap = gw * 0.025
+      // 1 colonne (mobile) : la pile de 4 billets doit tenir sous la navbar (≈ 76 % de la hauteur) et rester à l'écart des bords
+      const gw = cols === 2 ? vw * 0.62 : Math.min(vw * 0.8, vh * 0.355), gap = gw * 0.025
       const cw = (gw - gap * (cols - 1)) / cols, ch = cw / (TW / TH)
       const rg = gap * 3.4, gh = ch * rows + rg * (rows - 1)
       const c = i % cols, r = Math.floor(i / cols)
@@ -168,12 +176,12 @@ export default function Ribbon({ onPick, children }: Props) {
 
     const render = (time: number) => {
       const pp = p
-      const rise = 1 - out(span(pp, 0, 0.12)), run = mix(-22, 76, span(pp, 0, 0.58))
-      if (l1.current) l1.current.style.transform = `translate3d(${run}vw,${rise * 34}vh,0)`
-      if (l2.current) l2.current.style.transform = `translate3d(${-run}vw,${rise * 34}vh,0)`
+      const rise = 1 - out(span(pp, 0, 0.12)), run = mix(runA, runB, span(pp, 0, 0.58))
+      if (l1.current) l1.current.style.transform = `translate3d(${run}vw,${rise * riseV}vh,0)`
+      if (l2.current) l2.current.style.transform = `translate3d(${-run}vw,${rise * riseV}vh,0)`
       if (cap.current) {
         cap.current.style.opacity = String(1 - span(pp, 0.52, 0.57))
-        cap.current.style.transform = `translate(-50%,calc(-50% + ${rise * 34}vh))`
+        cap.current.style.transform = `translate(-50%,calc(-50% + ${rise * riseV}vh))`
       }
       if (intro.current) intro.current.style.opacity = String(1 - span(pp, 0, 0.05))
       if (rule.current) rule.current.style.transform = `scaleX(${ease(span(pp, 0.72, 0.86))})`

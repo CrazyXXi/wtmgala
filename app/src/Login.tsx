@@ -15,17 +15,20 @@ export default function Login({ onClose, onDone }: { onClose: () => void; onDone
     e?.preventDefault()
     if (!validEmail(email) || busy) return
     setBusy(true); setErr('')
-    const { demoCode } = await requestCode(email)
-    setDemo(demoCode); setDigits(Array(6).fill('')); setStep(1); setBusy(false)
-    setTimeout(() => refs.current[0]?.focus(), 250)
+    try {
+      const r = await requestCode(email)
+      setDemo(r.devCode ?? ''); setDigits(Array(6).fill('')); setStep(1)
+      setTimeout(() => refs.current[0]?.focus(), 250)
+    } catch (e) { setErr((e as Error).message) }
+    setBusy(false)
   }
 
   const check = async (d: string[]) => {
     const code = d.join('')
     if (code.length < 6 || busy) return
     setBusy(true); setErr('')
-    if (await verifyCode(email, code)) onDone(email.trim().toLowerCase())
-    else { setErr('Code incorrect ou expiré.'); setDigits(Array(6).fill('')); refs.current[0]?.focus() }
+    try { const r = await verifyCode(email, code); onDone(r.email) }
+    catch (e) { setErr((e as Error).message); setDigits(Array(6).fill('')); refs.current[0]?.focus() }
     setBusy(false)
   }
 
@@ -53,6 +56,7 @@ export default function Login({ onClose, onDone }: { onClose: () => void; onDone
                 <h3>Retrouvez vos billets</h3>
                 <p className="muted">Entrez votre e-mail, nous vous envoyons un code à 6 chiffres. Pas de mot de passe.</p>
                 <label>E-mail<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" autoFocus placeholder="vous@exemple.com" /></label>
+                {err && <p className="err" role="alert">{err}</p>}
                 <button className="btn" disabled={!validEmail(email) || busy}>{busy ? 'Envoi…' : 'Recevoir mon code'}</button>
               </form>
             ) : (
@@ -68,7 +72,9 @@ export default function Login({ onClose, onDone }: { onClose: () => void; onDone
                   ))}
                 </div>
                 {err && <p className="err" role="alert">{err}</p>}
-                <p className="note">Mode démonstration : aucun e-mail n’est réellement envoyé. Votre code : <b>{demo}</b></p>
+                {demo
+                  ? <p className="note">Mode démonstration (aucun e-mail n’est envoyé). Votre code : <b>{demo}</b></p>
+                  : <p className="note">Vérifiez aussi vos courriers indésirables. Le code est valable 10 minutes.</p>}
                 <button className="btn" onClick={() => check(digits)} disabled={busy || digits.some((x) => !x)}>{busy ? 'Vérification…' : 'Me connecter'}</button>
                 <button className="linkbtn" onClick={() => { setStep(0); setErr('') }}>Changer d’e-mail</button>
               </div>

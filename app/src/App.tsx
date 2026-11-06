@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from 'motion/react'
 import Ribbon from './Ribbon'
 import TicketView from './TicketView'
 import Billets from './Billets'
-import Checkout, { loadOrders } from './Checkout'
+import Checkout from './Checkout'
 import Login from './Login'
-import { getUser, logout, sameEmail } from './auth'
+import { getUser, logout, fetchOrders, fetchStock, Order } from './auth'
 import { CATEGORIES, CatId, byId, fcfa, EVENT } from './data'
 
 const FAQ = [
@@ -27,12 +27,14 @@ const parse = () => {
 export default function App() {
   const [route, setRoute] = useState(parse)
   const [buy, setBuy] = useState<{ id: CatId; qty: number } | null>(null)
-  const [orders, setOrders] = useState(loadOrders)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [pending, setPending] = useState<{ id: CatId; qty: number } | null>(null)
   const [open, setOpen] = useState<number | null>(0)
   const [onSky, setOnSky] = useState(true)
-  const [user, setUser] = useState<string | null>(getUser)
+  const [user, setUser] = useState<string | null>(null)
   const [login, setLogin] = useState(false)
   const [menu, setMenu] = useState(false)
+  const [burger, setBurger] = useState(false)
   useEffect(() => {
     const f = () => {
       const t = document.getElementById('track')
@@ -41,7 +43,10 @@ export default function App() {
     f(); addEventListener('scroll', f, { passive: true })
     return () => removeEventListener('scroll', f)
   }, [route.page])
-  const myTickets = user ? orders.filter((o) => sameEmail(o.email, user)) : []
+  const myTickets = orders
+  useEffect(() => { getUser().then(setUser) }, [])
+  useEffect(() => { if (user) fetchOrders().then(setOrders); else setOrders([]) }, [user])
+  useEffect(() => { fetchStock().then((st) => st && CATEGORIES.forEach((c) => { if (st[c.id] !== undefined) c.left = st[c.id] })) }, [])
   const [view, setView] = useState<{ id: CatId; name: string; number: string; qr: string } | null>(null)
 
   useEffect(() => {
@@ -60,6 +65,15 @@ export default function App() {
 
   const navEl = (
     <header className={route.page === 'home' && onSky ? 'nav onsky' : 'nav'}>
+        <button className="burger" onClick={() => setBurger(!burger)} aria-label="Menu" aria-expanded={burger}><i /><i /><i /></button>
+        {burger && (
+          <div className="nav-menu" onClick={() => setBurger(false)}>
+            <a href="/" onClick={link('/')}>Accueil</a>
+            <a href="/#mes-billets" onClick={link('/#mes-billets')}>Mes billets</a>
+            <a href="/#faq" onClick={link('/#faq')}>FAQ</a>
+            {!user && <button className="menu-login" onClick={() => setLogin(true)}>Se connecter</button>}
+          </div>
+        )}
         <a className="brand" href="/" onClick={link('/')}><img src="/logo.png" alt="Women Techmakers Abomey-Calavi" /></a>
         <nav>
           <a href="/" onClick={link('/')}>Accueil</a>
@@ -72,7 +86,7 @@ export default function App() {
             {menu && (
               <div className="acct-menu" role="menu">
                 <small>{user}</small>
-                <button role="menuitem" onClick={() => { logout(); setUser(null); setMenu(false) }}>Déconnexion</button>
+                <button role="menuitem" onClick={async () => { await logout(); setUser(null); setMenu(false) }}>Déconnexion</button>
               </div>
             )}
           </div>
@@ -89,7 +103,7 @@ export default function App() {
       {route.page === 'billets' ? (
         <>
           {navEl}
-          <Billets key={route.cat} initial={route.cat} onStart={(id, qty) => setBuy({ id, qty })} />
+          <Billets key={route.cat} initial={route.cat} onStart={(id, qty) => { if (user) setBuy({ id, qty }); else { setPending({ id, qty }); setLogin(true) } }} />
         </>
       ) : (
         <>
@@ -122,9 +136,9 @@ export default function App() {
               <div className="mine-list">
                 {myTickets.flatMap((o) => o.tickets.map((t) => (
                   <div key={t.number} className="mt-row">
-                    <i style={{ background: byId(o.cat.id).main }} />
-                    <div><b>{byId(o.cat.id).name} · {o.name}</b><small>{t.number}</small></div>
-                    <button onClick={() => setView({ id: o.cat.id, name: o.name, number: t.number, qr: t.qr })}>Voir</button>
+                    <i style={{ background: byId(o.cat as CatId).main }} />
+                    <div><b>{byId(o.cat as CatId).name} · {o.name}</b><small>{t.number}</small></div>
+                    <button onClick={() => setView({ id: o.cat as CatId, name: o.name, number: t.number, qr: t.qr })}>Voir</button>
                   </div>
                 )))}
               </div>
@@ -161,8 +175,8 @@ export default function App() {
             </motion.div>
           </motion.div>
         )}
-        {login && <Login onClose={() => setLogin(false)} onDone={(e) => { setUser(e); setLogin(false) }} />}
-        {buy && <Checkout key={buy.id} cat={byId(buy.id)} email={user ?? undefined} qty={buy.qty} onClose={() => setBuy(null)} onDone={() => setOrders(loadOrders())} />}
+        {login && <Login onClose={() => { setLogin(false); setPending(null) }} onDone={(e) => { setUser(e); setLogin(false); if (pending) { setBuy(pending); setPending(null) } }} />}
+        {buy && <Checkout key={buy.id} cat={byId(buy.id)} email={user ?? ''} qty={buy.qty} onClose={() => setBuy(null)} onDone={() => fetchOrders().then(setOrders)} />}
       </AnimatePresence>
     </>
   )
